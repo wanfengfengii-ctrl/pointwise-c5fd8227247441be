@@ -35,6 +35,15 @@ python3 -B run_demo.py
 - `review.requests.submit_review(store, batch=..., packet_id=..., packet_text=..., window=..., threshold=...)` 签出一份报告。窗口形如 `{"low": "1/2", "high": 1, "include_low": true, "include_high": false}`。有理端点可超出量程并直接与读值比较。支持闭单点和同端点带开端的空窗口。乙等于门槛计为达标。
 - `delivery.readback.receive_report(store, number)` 按确切号码读取已签快照，成功领取单独登记。未知有效号码抛出 `ReportNotFound`。`delivery.export.export_handoff(report)` 返回可 JSON 序列化的交班对象，包含号码、真实父件、原口径、状态及三个精确值。`ReportStore.read_signed(number)` 只查询快照并在缺失时返回 `None`。
 
+## 乙门槛反查
+
+THRESHOLD.md 的反查流程复用同一报告库：关站后凭固定件签出甲窗内乙通过率达标的最高门槛，次班凭领回报告核对设点。
+
+- `review.requests.submit_threshold_review(store, *, batch, packet_id, packet_text, window, minimum_rate)` 按 V1 规则核对指定件并解析甲窗，`minimum_rate` 为 `[0,1]` 内有理目标。签出的报告固定实际父件、原窗口、目标、筛选质量、状态和精确门槛。
+- `delivery.readback.receive_threshold_review(store, number)` 按反查号领取已签报告并单独登记，未知有效反查号抛出 `ReportNotFound`。反查号与 V1 报告号各自解释。
+- `delivery.readback.threshold_allows(report, setting)` 仅凭领回报告判断 `[0,1]` 内有理设点是否不高于所签门槛，等于门槛获准，`no_evidence` 时返回 `None`。
+- 门槛为 `Fraction` 或唯一确定的二次实根 `review.roots.QuadraticRoot`（规范整数系数加低/高根标志），无证据时为 `None`。签发与领取呈现一致。`delivery.export.export_threshold_handoff(report)` 导出可 JSON 序列化的交班对象。
+
 ## 核算与失败语义
 
 每个正权情景在源三角形上均匀取值，两路在同一个情景点分别求值，再各自限幅至归一满量程 `[0,1]`。输出联合证据的总概率为 1，含面上、线段上和单点上的质量。筛选质量 D 来自甲落入请求窗口的事件，联合质量 N 来自同一次观测同时落入该窗口且乙达标的事件。`measured` 报告给出 D、N 和 N/D，其中条件率可为零。`no_evidence` 报告给出两个零质量，条件率为 `null`。

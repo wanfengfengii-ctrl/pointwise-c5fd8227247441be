@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from fractions import Fraction
 
-from calibration.geometry import AffineForm, Triangle, clip_polygon, polygon_area
+from calibration.geometry import AffineForm, Polygon, Triangle, clip_polygon, polygon_area
 from issue.pieces import EvidencePiece
 from review.windows import ReviewWindow
 
@@ -24,18 +24,20 @@ def _channel(piece: EvidencePiece, index: int) -> AffineForm:
     return AffineForm(second - first, third - first, first)
 
 
-def measure_piece(piece: EvidencePiece, window: ReviewWindow, threshold: Fraction) -> tuple[Fraction, Fraction]:
+def selected_region(piece: EvidencePiece, window: ReviewWindow) -> Polygon:
+    """Reference-triangle region whose first-channel reading falls inside the window."""
     if window.empty:
-        return _ZERO, _ZERO
+        return ()
     a = _channel(piece, 0)
-    eligible = REFERENCE_TRIANGLE
     if a.u == 0 and a.v == 0:
-        if not window.contains(a.constant):
-            return _ZERO, _ZERO
-    else:
-        # For a nonconstant affine coordinate each endpoint is a null set in this domain.
-        eligible = clip_polygon(eligible, a.at_least(window.low))
-        eligible = clip_polygon(eligible, a.at_most(window.high))
+        return REFERENCE_TRIANGLE if window.contains(a.constant) else ()
+    # For a nonconstant affine coordinate each endpoint is a null set in this domain.
+    eligible = clip_polygon(REFERENCE_TRIANGLE, a.at_least(window.low))
+    return clip_polygon(eligible, a.at_most(window.high))
+
+
+def measure_piece(piece: EvidencePiece, window: ReviewWindow, threshold: Fraction) -> tuple[Fraction, Fraction]:
+    eligible = selected_region(piece, window)
     selected_area = polygon_area(eligible)
     if not selected_area:
         return _ZERO, _ZERO
