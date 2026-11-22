@@ -1,0 +1,19 @@
+{
+  "batch": "CG-041",
+  "observations": [
+    {"name": "bench-01", "raw": ["3/10", "1/5"], "reference": ["3/10", "1/5"]}
+  ],
+  "scenario_inputs": [
+    {"name": "bench-origin", "observation": "bench-01", "origin": [0, 0]}
+  ],
+  "calibration": [
+    {"name": "paired-run", "vertices": [[0, 0], [1, 0], [0, 1]], "weight": "1", "a": [2, 0, 0], "b": [1, 0, 0], "anchor": "bench-origin"}
+  ],
+  "review": {
+    "window": {"low": 1, "high": 1, "include_low": true, "include_high": true},
+    "threshold": "3/4"
+  },
+  "corrected_observations": [
+    {"name": "bench-01", "raw": ["3/10", "9/20"], "reference": ["3/10", "1/5"]}
+  ]
+}
